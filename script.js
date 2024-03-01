@@ -51,9 +51,35 @@ function resizeCanvasToDisplaySize(canvas)
     return needResize;
 }
 
+function getRandomInt(min, max)
+{
+    min = Math.ceil(min);
+    max = Math.floor(max);
+
+    return Math.floor(Math.random() * (max-min +1)) + min;
+}
+
+function drawRect(gl, x, y, width, height)
+{
+    var x1 = x;
+    var x2 = x + width;
+    var y1 = y;
+    var y2 = y + height;
+
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array
+    ([
+        x1, y1,
+        x2, y1,
+        x1, y2,
+        x1, y2,
+        x2, y1,
+        x2, y2,
+    ]), gl.STATIC_DRAW);
+}
+
 
 //draw the scene
-function drawScene(canvas, gl, program, posAttribLoc, posBuffer)
+function drawScene(canvas, gl, program, posAttribLoc, resUniformLoc, colourUniformLoc, posBuffer)
 {
     resizeCanvasToDisplaySize(canvas);
 
@@ -81,12 +107,19 @@ function drawScene(canvas, gl, program, posAttribLoc, posBuffer)
 
     //bind current ARRAY_BUFFER to attrib
     gl.vertexAttribPointer(posAttribLoc, size, type, normalize, stride, offset);
+    gl.uniform2f(resUniformLoc, gl.canvas.width, gl.canvas.height);
 
-    var primitiveType = gl.TRIANGLES;
-    var offset = 0;
-    var count = 3;
+    for(var ii = 0; ii < 50; ii++)
+    {
+        drawRect(gl, getRandomInt(20, 300), getRandomInt(20, 300), getRandomInt(20, 300), getRandomInt(20, 300));
+        gl.uniform4f(colourUniformLoc, Math.random(), Math.random(), Math.random(), 1);
 
-    gl.drawArrays(primitiveType, offset, count);
+        var primitiveType = gl.TRIANGLES;
+        var offset = 0;
+        var count = 6;
+    
+        gl.drawArrays(primitiveType, offset, count);
+    }
 }
 
 
@@ -99,7 +132,11 @@ function main()
 
     var program = createProgram(webgl, vertexShader, fragmentShader);
 
-    var posAttribLoc = webgl.getAttribLocation(program, "a_position"); 
+    var posAttribLoc = webgl.getAttribLocation(program, "a_position");
+    var resUniformLoc = webgl.getUniformLocation(program, "u_resolution"); 
+    var colourUniformLoc = webgl.getUniformLocation(program, "u_colour");
+
+
 
     var posBuffer = webgl.createBuffer();
 
@@ -107,14 +144,17 @@ function main()
 
     var positions =
     [
-        0, 0,
-        0, 0.5,
-        0.7, 0
+        10, 20,
+        80, 20,
+        10, 30,
+        10, 30,
+        80, 20,
+        80, 30,
     ];
 
     webgl.bufferData(webgl.ARRAY_BUFFER,new Float32Array(positions), webgl.STATIC_DRAW);
 
-    drawScene(webgl.canvas, webgl, program, posAttribLoc, posBuffer);
+    drawScene(webgl.canvas, webgl, program, posAttribLoc, resUniformLoc, colourUniformLoc, posBuffer);
 }
 
 main();
